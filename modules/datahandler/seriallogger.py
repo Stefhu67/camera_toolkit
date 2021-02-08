@@ -5,9 +5,6 @@ import os
 import config
 from datetime import datetime
 
-logging.basicConfig(level=logging.DEBUG,
-                    format='(%(threadName)-9s) %(message)s',)
-
 class DAQLogger(threading.Thread):
 
     def __init__(self, args=(), kwargs=None, index=None, name=None, addr=None):

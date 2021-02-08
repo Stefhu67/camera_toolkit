@@ -10,7 +10,7 @@ First, start by installing the necessary system dependencies.
 
 Dependencies necessary to run the package (tested on Debian and Ubuntu):
 
-`sudo apt install build-essential pkg-config git python3-dev python3-venv gnuplot libgphoto2-dev`
+`sudo apt install build-essential pkg-config git python3-dev python3-venv gnuplot libgphoto2-dev libssl-dev python3-setuptools`
 
 ## Clone the repo
 

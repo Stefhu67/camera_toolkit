@@ -4,24 +4,39 @@ import time
 import logging
 from modules import *
 
-logging.basicConfig(level=logging.DEBUG,
+logger = logging.getLogger('camcontroller')
+logging.basicConfig(level=logging.WARNING,
                     format='(%(threadName)-9s) %(message)s',)
+fh = logging.FileHandler('camcontroller.log')
+fh.setLevel(logging.DEBUG)
+consoleHandler = logging.StreamHandler()
+consoleHandler.setLevel(logging.WARNING)
+logger.addHandler(fh)
+logger.addHandler(consoleHandler)
 
 config.run = True
-logging.debug("Config.run is True")
+logging.warning("Config.run is True")
+
+
+if config.serial == False:
+    config.continuous_serial = False
 
 buffers = {}
 threads = {}
 i = 0
 
 if config.DSLR:
-    setup_DSLRs = GPhotoUtils()
-    for gcamera in setup_DSLRs.camera_list:
-        name = gcamera[0]
-        addr = gcamera[1]
-        buffers["gcamera"+str(i)] = queue.Queue(maxsize=0)
-        threads["gcamera"+str(i)] = GPhotoCamera(args =(buffers["gcamera"+str(i)]), index=i, name=gcamera[0], addr=gcamera[1]) 
-        i += 1
+        setup_DSLRs = GPhotoUtils()
+        for gcamera in setup_DSLRs.camera_list:
+            name = gcamera[0]
+            addr = gcamera[1]
+            buffers["gcamera"+str(i)] = queue.Queue(maxsize=0)
+            if config.DSLR_continuous == False:
+                threads["gcamera"+str(i)] = GPhotoCamera(args =(buffers["gcamera"+str(i)]), index=i, name=gcamera[0], addr=gcamera[1]) 
+            else:
+                threads["gcamera"+str(i)] = GPhotoFeed(args =(buffers["gcamera"+str(i)]), index=i, name=gcamera[0], addr=gcamera[1]) 
+            i += 1
+
 
 if config.opencv:
     opencv_cameras = CV2Utils.returnCameraIndexes()
@@ -50,7 +65,7 @@ if config.continuous_serial == True:
 
 
 keyboard.start()
-logging.debug("Press 'Q' to exit.")
+logging.warning("Press 'Q' to exit.")
 while (True):
     if (inputQueue.qsize() > 0):
         input_str = inputQueue.get()
@@ -58,16 +73,14 @@ while (True):
         if (input_str == "q"):
             config.run = False
             logging.debug("Exiting serial terminal.")
-            logging.debug("Wait for the connection closed signal before Ctrl+C...")
+            logging.warning("Wait for the connection closed signal before Ctrl+C...")
             break 
-        elif (input_str == "s"):
-            config.trigger = True
-            logging.debug("Triggered caliration shot.")
 
 config.run = False  
 logging.debug("Config.run is False")
 time.sleep(3)
 
 for key, thread in threads.items():
-    thread.stop()
     thread.join()
+
+sys.exit(1)

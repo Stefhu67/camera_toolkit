@@ -5,9 +5,6 @@ import os
 import config
 from datetime import datetime
 
-logging.basicConfig(level=logging.DEBUG,
-                    format='(%(threadName)-9s) %(message)s',)
-
 class Entry(threading.Thread):
 
     def __init__(self, args=(), kwargs=None, index=None, name=None, addr=None):
@@ -28,9 +25,10 @@ class Entry(threading.Thread):
         while True:
             qvalue = self.q.get() 
             if qvalue != last_value:
+                self.prepare_doc(qvalue)
                 logging.debug("New entry saved to database: " + str(qvalue))
                 last_value = qvalue
-                self.prepare_doc(qvalue)
+                
 
     def prepare_doc(self, qvalue):
         for key, value in qvalue.items():

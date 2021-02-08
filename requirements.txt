@@ -1,4 +1,6 @@
 wheel
+setuptools
+cython
 pyserial
 opencv-python
 pandas

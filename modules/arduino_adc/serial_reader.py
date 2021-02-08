@@ -4,9 +4,6 @@ import logging
 import config
 import asciiplotlib as apl
 
-logging.basicConfig(level=logging.DEBUG,
-                    format='(%(threadName)-9s) %(message)s',)
-
 
 class DAQReader(threading.Thread):
 
@@ -26,6 +23,7 @@ class DAQReader(threading.Thread):
             if config.run == False:
                 self.stop()
                 break
+
             if self.plugged == True:
                 channels = self.read_all_channels()
                 with self.q.mutex:

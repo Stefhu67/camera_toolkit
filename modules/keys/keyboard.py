@@ -1,10 +1,6 @@
 import threading
-import logging
+import logging, sys
 import config
-
-logging.basicConfig(level=logging.DEBUG,
-                    format='(%(threadName)-9s) %(message)s',)
-
 
 class KeyMonitor(threading.Thread):
 
@@ -18,3 +14,6 @@ class KeyMonitor(threading.Thread):
         while (True):
             input_str = input()
             self.q.put(input_str)
+
+    def stop(self):
+        sys.exit(1)
