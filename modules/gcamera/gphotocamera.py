@@ -18,7 +18,7 @@ class GPhotoCamera(threading.Thread):
         if not os.path.exists(config.experiment_path+config.status+"/"):
             os.makedirs(config.experiment_path+config.status+"/")
         self.init_gcam(index, name, addr)
-        self.save_frame_q = queue.Queue(maxsize=0)
+        self.save_frame_q = queue.Queue(maxsize=1)
         self.fsaver = FrameSaver( args = (self.save_frame_q),  )
         self.fsaver.start()
         config.devices[self.name+str(self.index)] = True

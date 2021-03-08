@@ -17,7 +17,7 @@ class WebcamVideoStream :
         (self.grabbed, self.frame) = self.stream.read()
         self.started = False
         self.read_lock = Lock()
-        self.save_frame_q = queue.Queue(maxsize=0)
+        self.save_frame_q = queue.Queue(maxsize=1)
         self.fsaver = FrameSaver( args = (self.save_frame_q),  )
         self.fsaver.start()
         config.devices["opencv"+str(self.src)] = True

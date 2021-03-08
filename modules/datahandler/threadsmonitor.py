@@ -15,7 +15,7 @@ class Clipboard(threading.Thread):
         super().__init__()
         self.queues = args
         self.kwargs = kwargs
-        self.dbqueue = queue.Queue(maxsize=0)
+        self.dbqueue = queue.Queue(maxsize=1)
         self.dbthread = Entry(args = (self.dbqueue))
         shutil.copy(config.data_export_script, config.experiment_path+"data_export.py")
         if not os.path.exists(config.experiment_path+config.status+"/"):
