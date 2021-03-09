@@ -17,7 +17,7 @@ class GPhotoFeed(threading.Thread):
             os.makedirs(config.experiment_path+config.status+"/")
         self.init_gcam(index, name, addr)
         self.start_capture_view()
-        self.save_frame_q = queue.Queue(maxsize=1)
+        self.save_frame_q = queue.Queue(maxsize=0)
         self.fsaver = FrameSaver( args = (self.save_frame_q),  )
         self.fsaver.start()
         config.devices[self.name+str(self.index)] = True

@@ -30,7 +30,7 @@ if config.DSLR:
         for gcamera in setup_DSLRs.camera_list:
             name = gcamera[0]
             addr = gcamera[1]
-            buffers["gcamera"+str(i)] = queue.Queue(maxsize=1)
+            buffers["gcamera"+str(i)] = queue.Queue(maxsize=0)
             if config.DSLR_continuous == False:
                 threads["gcamera"+str(i)] = GPhotoCamera(args =(buffers["gcamera"+str(i)]), index=i, name=gcamera[0], addr=gcamera[1]) 
             else:
@@ -42,11 +42,11 @@ if config.opencv:
     opencv_cameras = CV2Utils.returnCameraIndexes()
     opencv_best_res = CV2Utils.returnCameraResolutions( opencv_cameras )
     for cvcamera in opencv_cameras:
-        buffers["ocamera"+str(cvcamera)] = queue.Queue(maxsize=1)
+        buffers["ocamera"+str(cvcamera)] = queue.Queue(maxsize=0)
         threads["ocamera"+str(cvcamera)] = WebcamVideoStream( q = buffers["ocamera"+str(cvcamera)], src = int(cvcamera), width = opencv_best_res[0], height = opencv_best_res[1])
 
 if config.serial:
-    serial_buffer = queue.Queue(maxsize=1)
+    serial_buffer = queue.Queue(maxsize=0)
     arduino = DAQReader(args = (serial_buffer), baudrate = config.serial_baudrate ,port = config.serial_port)
     buffers["arduino"] = serial_buffer
     threads["arduino"] = arduino
