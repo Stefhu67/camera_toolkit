@@ -1,10 +1,10 @@
 import gphoto2 as gp
-import logging, time, os
+import logging, time, os, sys
 import config
 import threading
+import queue
+from .photosaver import FrameSaver
 
-logging.basicConfig(level=logging.DEBUG,
-                    format='(%(threadName)-9s) %(message)s',)
 
 class GPhotoCamera(threading.Thread):
 
@@ -18,6 +18,9 @@ class GPhotoCamera(threading.Thread):
         if not os.path.exists(config.experiment_path+config.status+"/"):
             os.makedirs(config.experiment_path+config.status+"/")
         self.init_gcam(index, name, addr)
+        self.save_frame_q = queue.Queue(maxsize=0)
+        self.fsaver = FrameSaver( args = (self.save_frame_q),  )
+        self.fsaver.start()
         config.devices[self.name+str(self.index)] = True
 
     def init_gcam(self, index, name, addr):
@@ -42,33 +45,16 @@ class GPhotoCamera(threading.Thread):
                 self.i2 = self.camera.capture(gp.GP_CAPTURE_IMAGE)
                 self.t = time.time()
                 self.f2 = self.camera.file_get(self.i2.folder,self.i2.name,gp.GP_FILE_TYPE_NORMAL)
-                self.filename = config.experiment_path+config.status+"/"+str(self.t)+"gcam"+str(self.index)+self.i2.name
+                self.filename = config.experiment_path+config.status+"/g"+"_"+str(config.count).zfill(4) +"_"+str(self.index)+".png"
                 self.q.put( [self.t, self.filename] )
+                self.save_frame_q.put( [self.filename, self.f2] )
                 self.empty_queue()
-                self.save_photo()
                 config.devices[self.name+str(self.index)] = True
-                config.trigger = False
-            if config.preview == True:
-                config.devices[self.name+str(self.index)] = False
-                logging.debug("Gphoto camera triggered")
-                self.i2 = self.camera.capture(gp.GP_CAPTURE_IMAGE)
-                self.f2 = self.camera.file_get(self.i2.folder,self.i2.name,gp.GP_FILE_TYPE_NORMAL)
-                self.filename = config.experiment_path+"preview"+"/"+"gcam"+str(self.index)+".jpg"
-                self.empty_queue()
-                self.save_photo()
-                config.devices[self.name+str(self.index)] = True
-                config.preview = False
-
-    def save_photo(self):
-        self.f2.save(self.filename)
-        logging.debug("Saved gPhoto camera image to '%s'" % self.filename)
 
     def empty_queue(self):
         typ,data = self.camera.wait_for_event(200)
-        while typ != gp.GP_EVENT_TIMEOUT:
-            
-            logging.debug("Event: %s, data: %s" % (self.event_text(typ),data))
-            
+        while typ != gp.GP_EVENT_TIMEOUT:       
+            logging.debug("Event: %s, data: %s" % (self.event_text(typ),data))  
             if typ == gp.GP_EVENT_FILE_ADDED:
                 fn = os.path.join(data.folder,data.name)
                 logging.debug("New file: %s" % fn)
@@ -77,7 +63,8 @@ class GPhotoCamera(threading.Thread):
     def stop(self):
         self.empty_queue()
         self.camera.exit()
-        print('Dropped connection with camera')
+        logging.warning('Dropped connection with camera')
+        sys.exit(1)
 
     def event_text(self, event_type):
         if event_type == gp.GP_EVENT_CAPTURE_COMPLETE: return "Capture Complete"

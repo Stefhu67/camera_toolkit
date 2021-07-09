@@ -1,6 +1,10 @@
 wheel
+setuptools
+cython
 pyserial
 opencv-python
 pandas
 tinydb
 matplotlib
+gphoto2
+asciiplotlib

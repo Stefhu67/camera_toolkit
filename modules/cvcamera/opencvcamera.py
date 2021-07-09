@@ -2,11 +2,10 @@ from threading import Thread, Lock
 import cv2, time
 import pkg_resources
 import logging
+import queue
 import config
 import pandas as pd
-
-logging.basicConfig(level=logging.DEBUG,
-                    format='(%(threadName)-9s) %(message)s',)
+from .framesaver import FrameSaver
 
 class WebcamVideoStream :
     def __init__(self, q = None, src = 0, width = 1280, height = 720) :
@@ -18,6 +17,9 @@ class WebcamVideoStream :
         (self.grabbed, self.frame) = self.stream.read()
         self.started = False
         self.read_lock = Lock()
+        self.save_frame_q = queue.Queue(maxsize=0)
+        self.fsaver = FrameSaver( args = (self.save_frame_q),  )
+        self.fsaver.start()
         config.devices["opencv"+str(self.src)] = True
         logging.debug("OpenCV camera is __init__.")
 
@@ -32,32 +34,18 @@ class WebcamVideoStream :
     def update(self) :
         while self.started :
             (grabbed, frame) = self.stream.read()
-            self.read_lock.acquire()
             self.t = time.time()
+            self.read_lock.acquire()
             self.grabbed, self.frame = grabbed, frame
             self.read_lock.release()
             if config.trigger == True:
                 config.devices["opencv"+str(self.src)] = False
                 frame = self.get()
                 logging.debug("Open CV camera triggered.")
-                self.filename = config.experiment_path+config.status+"/"+str(self.t)+"ocv"+str(self.src)+".png"
+                self.filename = config.experiment_path+config.status+"/o"+"_"+str(config.count).zfill(4) +"_"+str(self.src)+".png"
                 self.q.put( [self.t, self.filename] )
-                self.save_image(frame)
+                self.save_frame_q.put( [self.filename, frame] )
                 config.devices["opencv"+str(self.src)] = True
-                config.trigger = False
-            if config.preview == True:
-                config.devices["opencv"+str(self.src)] = False
-                frame = self.get()
-                logging.debug("Open CV camera triggered.")
-                self.filename = config.experiment_path+"preview"+"/"+"ocv"+str(self.src)+".png"
-                print("FILENAME: ", self.filename)
-                self.save_image(frame)
-                config.devices["opencv"+str(self.src)] = True
-                config.preview = False
-
-    def save_image(self, frame):
-        cv2.imwrite(self.filename, frame)
-        logging.debug("Saved Open CV camera image to: "+ self.filename)
 
     def get(self) :
         self.read_lock.acquire()
@@ -73,7 +61,7 @@ class WebcamVideoStream :
         if self.thread.is_alive():
             self.thread.join()
         self.stream.release()
-        logging.debug("Closed connection with Open CV camera")
+        logging.warning("Closed connection with Open CV camera")
 
     def __exit__(self, exc_type, exc_value, traceback) :
         self.stream.release()
@@ -88,20 +76,23 @@ class CV2Utils:
     def __init__(self):
         pass
 
-
     @staticmethod
     def returnCameraIndexes():
         index = 0
         arr = []
         i = 20
         while i > 0:
-            cap = cv2.VideoCapture(index)
-            if cap.read()[0]:
-                arr.append(index)
-                cap.release()
-            index += 1
-            i -= 1
-            time.sleep(0)
+            if int(index) != config.cvexclude:
+                cap = cv2.VideoCapture(index)
+                if cap.read()[0]:
+                    arr.append(index)
+                    cap.release()
+                index += 1
+                i -= 1
+                time.sleep(0)
+            else:
+                index+=1
+                i-=1
         if not arr: 
             arr = False
             logging.debug("No OpenCV webcams found ..." )

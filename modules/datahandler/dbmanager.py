@@ -3,9 +3,7 @@ import logging
 from tinydb import TinyDB, where
 import os
 import config
-
-logging.basicConfig(level=logging.DEBUG,
-                    format='(%(threadName)-9s) %(message)s',)
+from datetime import datetime
 
 class Entry(threading.Thread):
 
@@ -14,6 +12,9 @@ class Entry(threading.Thread):
         self.q = args
         self.kwargs = kwargs
         self.index = index
+        now = datetime.now()
+        date_prefix = str(now.strftime("%Y%m%d-%H%M"))
+        config.experiment_path = config.experiment_path + date_prefix + "/"
         if not os.path.exists(config.experiment_path):
             os.makedirs(config.experiment_path)
         self.db = TinyDB(config.experiment_path + "/" + "data.json")
@@ -24,9 +25,10 @@ class Entry(threading.Thread):
         while True:
             qvalue = self.q.get() 
             if qvalue != last_value:
+                self.prepare_doc(qvalue)
                 logging.debug("New entry saved to database: " + str(qvalue))
                 last_value = qvalue
-                self.prepare_doc(qvalue)
+                
 
     def prepare_doc(self, qvalue):
         for key, value in qvalue.items():
